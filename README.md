@@ -1,5 +1,7 @@
 # 🎭 Voice Changer Phone
 
+> **📱 [Deploy Now on Railway](https://railway.app/template/github/zekeforwin-droid/voice-changer-phone)** | **📁 [View Source](https://github.com/zekeforwin-droid/voice-changer-phone)**
+
 Real-time voice transformation for phone calls using Twilio and ElevenLabs.
 
 Make phone calls with your voice transformed into any character - deep male, soft female, British accent, and more. The recipient hears the transformed voice in real-time while you speak naturally.
@@ -100,7 +102,7 @@ CUSTOM_VOICE_ID=xxxx     # Custom cloned voice
 2. Add environment variables
 3. Deploy automatically
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/github/zekeforwin-droid/voice-changer-phone)
 
 ### Other Platforms
 
