@@ -58,7 +58,11 @@ fastify.register(async function (fastify) {
     const voicePreset = params.get('voicePreset') || 'deep_male';
     const callId = params.get('callId') || 'unknown';
     
-    logger.info(`WebSocket connected - Call: ${callId}, Voice: ${voicePreset}`);
+    logger.info(`🔌 WebSocket CONNECTION ESTABLISHED!`);
+    logger.info(`   Call ID: ${callId}`);
+    logger.info(`   Voice Preset: ${voicePreset}`);
+    logger.info(`   Client IP: ${req.headers['x-forwarded-for'] || req.ip}`);
+    logger.info(`   Request URL: ${req.url}`);
     
     handleMediaStream(socket, {
       callId,
@@ -105,6 +109,7 @@ fastify.post('/voice', async (request, reply) => {
   <Pause length="3600" />
 </Response>`;
 
+  logger.info(`Generated TwiML: ${twiml}`);
   reply.type('text/xml').send(twiml);
 });
 
@@ -274,6 +279,50 @@ fastify.get('/api/health', async (request, reply) => {
   };
   
   reply.send(health);
+});
+
+/**
+ * GET /test-ws - Test WebSocket connectivity
+ */
+fastify.get('/test-ws', async (request, reply) => {
+  const wsTestHtml = `
+<!DOCTYPE html>
+<html>
+<head><title>WebSocket Test</title></head>
+<body>
+  <h1>WebSocket Connection Test</h1>
+  <div id="status">Connecting...</div>
+  <div id="log"></div>
+  <script>
+    const log = document.getElementById('log');
+    const status = document.getElementById('status');
+    
+    try {
+      const ws = new WebSocket('wss://web-production-9321.up.railway.app/media-stream?test=true');
+      
+      ws.onopen = function() {
+        status.textContent = '✅ WebSocket Connected!';
+        log.innerHTML += '<br>✅ Connection successful';
+      };
+      
+      ws.onerror = function(error) {
+        status.textContent = '❌ WebSocket Error';
+        log.innerHTML += '<br>❌ Error: ' + error;
+      };
+      
+      ws.onclose = function() {
+        status.textContent = '⚠️ WebSocket Disconnected';
+        log.innerHTML += '<br>⚠️ Connection closed';
+      };
+    } catch(e) {
+      status.textContent = '❌ WebSocket Failed';
+      log.innerHTML = '❌ Exception: ' + e.message;
+    }
+  </script>
+</body>
+</html>`;
+  
+  reply.type('text/html').send(wsTestHtml);
 });
 
 // ============================================
