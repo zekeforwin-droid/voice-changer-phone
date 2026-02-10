@@ -79,7 +79,11 @@ fastify.post('/voice', async (request, reply) => {
   const { voicePreset = 'deep_male', toNumber } = request.body || {};
   const callId = request.body?.CallSid || `call_${Date.now()}`;
   
-  logger.info(`TwiML requested - CallSid: ${callId}, Voice: ${voicePreset}`);
+  logger.info(`🔥 POST /voice webhook called!`);
+  logger.info(`   CallSid: ${callId}`);
+  logger.info(`   Voice: ${voicePreset}`);
+  logger.info(`   Headers: ${JSON.stringify(request.headers)}`);
+  logger.info(`   Body: ${JSON.stringify(request.body)}`);
   
   // Build TwiML response
   const host = process.env.SERVER_URL?.replace(/^https?:\/\//, '') || request.headers.host;
@@ -157,7 +161,9 @@ fastify.post('/voice/outbound', async (request, reply) => {
 fastify.post('/call-status', async (request, reply) => {
   const { CallSid, CallStatus, CallDuration, From, To } = request.body || {};
   
-  logger.info(`Call Status: ${CallSid} - ${CallStatus} (${CallDuration}s)`);
+  logger.info(`📞 Call Status Webhook: ${CallSid} - ${CallStatus} (${CallDuration}s)`);
+  logger.info(`   From: ${From}, To: ${To}`);
+  logger.info(`   Status Body: ${JSON.stringify(request.body)}`);
   
   // Track call metrics
   if (CallStatus === 'completed') {

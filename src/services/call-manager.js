@@ -61,10 +61,14 @@ export class CallManager {
     const isTrialAccount = !this.phoneNumber;
     logger.info(`Using ${isTrialAccount ? 'trial account (no from number)' : 'phone number: ' + this.phoneNumber}`);
     
+    // Debug the webhook URL
+    const webhookUrl = `${this.serverUrl}/voice?voicePreset=${voicePreset}`;
+    logger.info(`Webhook URL: ${webhookUrl}`);
+    
     try {
       // Create call configuration
       const callConfig = {
-        url: `${this.serverUrl}/voice?voicePreset=${voicePreset}`,
+        url: webhookUrl,
         to: formattedNumber,
         statusCallback: `${this.serverUrl}/call-status`,
         statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
