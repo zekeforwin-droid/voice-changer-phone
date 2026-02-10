@@ -83,7 +83,7 @@ fastify.post('/voice', async (request, reply) => {
   
   // Build TwiML response
   const host = process.env.SERVER_URL?.replace(/^https?:\/\//, '') || request.headers.host;
-  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&callId=${callId}`;
+  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&amp;callId=${callId}`;
   
   // TwiML for outbound call with voice transformation
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -109,7 +109,7 @@ fastify.get('/voice', async (request, reply) => {
   logger.info(`TwiML test request - Voice: ${voicePreset}`);
   
   const host = process.env.SERVER_URL?.replace(/^https?:\/\//, '') || request.headers.host;
-  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&callId=test123`;
+  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&amp;callId=test123`;
   
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -135,7 +135,7 @@ fastify.post('/voice/outbound', async (request, reply) => {
   logger.info(`Outbound TwiML - CallSid: ${callId}`);
   
   const host = process.env.SERVER_URL?.replace(/^https?:\/\//, '') || request.headers.host;
-  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&callId=${callId}&direction=outbound`;
+  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&amp;callId=${callId}&amp;direction=outbound`;
   
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
