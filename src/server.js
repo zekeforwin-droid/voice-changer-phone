@@ -42,6 +42,9 @@ await fastify.register(fastifyStatic, {
   prefix: '/',
 });
 
+// Register form body parser for Twilio webhooks
+await fastify.register(import('@fastify/formbody'));
+
 // Initialize services
 const callManager = new CallManager();
 const voiceTransformer = new VoiceTransformer();
