@@ -254,9 +254,11 @@ try {
   logger.info(`🎭 Voice Changer Phone Server running on ${HOST}:${PORT}`);
   
   // Fix WebSocket URL - strip https:// from SERVER_URL  
-  const serverUrl = process.env.SERVER_URL || `localhost:${PORT}`;
-  const wsUrl = serverUrl.replace(/^https?:\/\//, '');
-  logger.info(`   WebSocket: wss://${wsUrl}/media-stream`);
+  let serverUrl = process.env.SERVER_URL || `localhost:${PORT}`;
+  if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
+    serverUrl = serverUrl.replace(/^https?:\/\//, '');
+  }
+  logger.info(`   WebSocket: wss://${serverUrl}/media-stream`);
   logger.info(`   Web UI: http://localhost:${PORT}`);
   
   // Log configuration status
