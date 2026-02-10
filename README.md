@@ -1,6 +1,6 @@
 # 🎭 Voice Changer Phone
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/voice-changer-phone?referralCode=zeke)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?repo=https://github.com/zekeforwin-droid/voice-changer-phone)
 
 Real-time voice transformation for phone calls using Twilio and ElevenLabs.
 

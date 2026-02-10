@@ -54,8 +54,8 @@ With a trial account, you can only call **verified numbers**. Add your own phone
 
 ## Step 3: Deploy to Railway (3 min)
 
-1. **Open** https://github.com/zekeforwin-droid/voice-changer-phone
-2. **Click** the purple **"Deploy on Railway"** button
+1. **Click this link:** https://railway.app/new?repo=https://github.com/zekeforwin-droid/voice-changer-phone
+   - Or open the GitHub repo and click the purple "Deploy on Railway" button
 3. **Sign in** with GitHub (create account if needed)
 4. **Fill in** the environment variables:
 
