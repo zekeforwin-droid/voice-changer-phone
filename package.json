@@ -25,7 +25,6 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
-    "fastify-static": "^4.7.0",
     "@fastify/static": "^7.0.1",
     "@fastify/websocket": "^10.0.1",
     "twilio": "^5.0.0",

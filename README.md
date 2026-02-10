@@ -1,152 +1,180 @@
 # 🎭 Voice Changer Phone
 
-> **📱 [Deploy Now on Railway](https://railway.app/template/github/zekeforwin-droid/voice-changer-phone)** | **📁 [View Source](https://github.com/zekeforwin-droid/voice-changer-phone)**
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/voice-changer-phone?referralCode=zeke)
 
 Real-time voice transformation for phone calls using Twilio and ElevenLabs.
 
 Make phone calls with your voice transformed into any character - deep male, soft female, British accent, and more. The recipient hears the transformed voice in real-time while you speak naturally.
 
-## Features
+---
 
-- **Real-time voice transformation** - <400ms latency
-- **Multiple voice presets** - 9+ voices included
-- **Custom voice cloning** - Use your own ElevenLabs voices
-- **Simple web UI** - Easy call initiation
-- **CLI support** - Quick calls from terminal
-- **Usage tracking** - Monitor costs in real-time
-- **Production ready** - Deploy to Railway in minutes
+## ⚡ One-Click Deploy
 
-## Quick Start
+### Step 1: Get Your API Keys (10 min)
 
-```bash
-# 1. Install dependencies
-npm install
+**ElevenLabs** ($5/month):
+1. Go to [elevenlabs.io](https://elevenlabs.io) → Sign up
+2. Subscribe to **Starter** plan ($5/mo)
+3. Settings → API Keys → Create → **Copy the key**
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your credentials
+**Twilio** (free trial + $1.15/mo for number):
+1. Go to [twilio.com/try-twilio](https://www.twilio.com/try-twilio) → Sign up
+2. From Console Dashboard, copy **Account SID** and **Auth Token**
+3. Phone Numbers → Buy a Number → Choose with Voice capability
+4. **Copy the phone number** (format: +1XXXXXXXXXX)
 
-# 3. Start the server
-npm start
+### Step 2: Deploy to Railway (5 min)
 
-# 4. Open http://localhost:3000
-```
+1. Click the **Deploy on Railway** button above
+2. Sign in with GitHub
+3. Fill in environment variables:
+   - `TWILIO_ACCOUNT_SID` - Your Twilio Account SID
+   - `TWILIO_AUTH_TOKEN` - Your Twilio Auth Token  
+   - `TWILIO_PHONE_NUMBER` - Your Twilio phone number
+   - `ELEVENLABS_API_KEY` - Your ElevenLabs API key
+4. Click **Deploy**
+5. Wait for deployment (~2 min)
+6. Go to Settings → Domains → Generate Domain
+7. Copy your Railway URL (e.g., `voice-changer-xxx.up.railway.app`)
+8. Add one more variable: `SERVER_URL` = your Railway URL (without trailing /)
 
-## Requirements
+### Step 3: Configure Twilio Webhook (2 min)
 
-- Node.js 20+
-- [Twilio Account](https://www.twilio.com/try-twilio) (with phone number)
-- [ElevenLabs Account](https://elevenlabs.io) (Starter plan: $5/mo)
+1. In [Twilio Console](https://console.twilio.com) → Phone Numbers
+2. Click your phone number
+3. Under "A call comes in":
+   - Webhook URL: `https://YOUR-RAILWAY-URL/voice`
+   - HTTP: POST
+4. Save
 
-## Architecture
+### Step 4: Make Your First Call! 🎉
 
-```
-Win's Phone → Twilio → WebSocket → Voice Transform → WebSocket → Twilio → Recipient
-                         ↓                              ↓
-                   Audio Buffer                   Audio Buffer
-                         ↓                              ↓
-                   μ-law → PCM                   PCM → μ-law
-                         ↓                              ↓
-                     ElevenLabs Speech-to-Speech
-```
+1. Open your Railway URL in any browser
+2. Enter a phone number (must be verified for trial accounts)
+3. Pick a voice preset
+4. Click **Start Call**
+5. Answer and speak - the other person hears your transformed voice!
 
-## Voice Presets
+---
 
-| Voice | Description |
-|-------|-------------|
+## 🎭 Voice Presets
+
+| Voice | Style |
+|-------|-------|
 | Deep Male (Adam) | Deep, authoritative |
 | Young Male (Josh) | Young, energetic |
 | British Male (Harry) | British accent |
+| Narrator (Marcus) | Professional |
 | Soft Female (Bella) | Soft, gentle |
-| Professional Female (Rachel) | Clear, professional |
+| Professional Female (Rachel) | Clear, business |
 | Warm Female (Domi) | Warm, friendly |
 | Mysterious (Arnold) | Deep, mysterious |
-| Narrator (Marcus) | Professional narrator |
 | Friendly Elder (Thomas) | Warm, elderly |
 
-## Configuration
+---
 
-See `.env.example` for all options:
+## 💰 Cost Estimate
 
-```env
-# Required
-TWILIO_ACCOUNT_SID=ACxxxx
-TWILIO_AUTH_TOKEN=xxxx
-TWILIO_PHONE_NUMBER=+15551234567
-ELEVENLABS_API_KEY=sk_xxxx
-SERVER_URL=https://your-server.com
-
-# Optional
-AUDIO_BUFFER_MS=200      # Latency tuning
-USE_FLASH_MODEL=true     # Lower latency
-CUSTOM_VOICE_ID=xxxx     # Custom cloned voice
-```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Web UI |
-| `/api/call` | POST | Initiate a call |
-| `/api/call/:sid` | GET | Get call status |
-| `/api/call/:sid` | DELETE | End a call |
-| `/api/voices` | GET | List available voices |
-| `/api/stats` | GET | Usage statistics |
-| `/api/health` | GET | Health check |
-
-## Deployment
-
-### Railway (Recommended)
-
-1. Connect GitHub repo to Railway
-2. Add environment variables
-3. Deploy automatically
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/github/zekeforwin-droid/voice-changer-phone)
-
-### Other Platforms
-
-The app runs on any Node.js hosting with WebSocket support:
-- Render
-- Fly.io
-- AWS EC2/ECS
-- Google Cloud Run
-
-## Cost Estimate
-
-For ~2-5 hours of calls per month:
+~$12-15/month for prototype usage:
 
 | Service | Cost |
 |---------|------|
-| ElevenLabs Starter | $5/mo |
-| Twilio Phone Number | $1.15/mo |
-| Twilio Calls | ~$3/mo |
-| Hosting (Railway) | $5/mo |
-| **Total** | **~$14/mo** |
+| ElevenLabs Starter | $5/month |
+| Twilio Phone Number | $1.15/month |
+| Twilio Calls (~2-5 hrs) | ~$3/month |
+| Railway Starter | $5/month |
 
-## Documentation
+---
 
-- [Setup Guide](docs/SETUP.md) - Detailed setup instructions
-- [Usage Guide](docs/USAGE.md) - Daily usage instructions
-- [Troubleshooting](docs/USAGE.md#troubleshooting) - Common issues
+## 📱 Access From Anywhere
 
-## Development
+Once deployed, access your voice changer from:
+- 💻 Any computer with a browser
+- 📱 Your phone's browser
+- 🌐 Any device with internet
+
+Just bookmark your Railway URL!
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `TWILIO_ACCOUNT_SID` | Twilio Account SID | `ACxxxx...` |
+| `TWILIO_AUTH_TOKEN` | Twilio Auth Token | `xxxxx...` |
+| `TWILIO_PHONE_NUMBER` | Your Twilio number | `+15551234567` |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key | `sk_xxxx...` |
+| `SERVER_URL` | Your Railway URL | `https://app.up.railway.app` |
+| `PORT` | Server port (auto-set) | `3000` |
+| `NODE_ENV` | Environment | `production` |
+
+---
+
+## 🔧 Troubleshooting
+
+### Call won't connect
+- **Trial account?** Add destination to Twilio → Verified Caller IDs
+- Check Twilio Console → Logs → Calls for errors
+- Verify webhook URL is correct
+
+### Voice not transforming
+- Check ElevenLabs has credits (Settings → Usage)
+- Verify API key is correct
+- Voice passes through unchanged on API errors
+
+### High latency
+- Reduce `AUDIO_BUFFER_MS` to 150
+- Set `USE_FLASH_MODEL=true`
+
+---
+
+## 📚 Documentation
+
+- [Quick Start Guide](docs/WIN-QUICKSTART.md)
+- [Detailed Setup](docs/SETUP.md)
+- [Usage Guide](docs/USAGE.md)
+- [API Configuration](docs/API-CONFIGURATION.md)
+- [Testing & Troubleshooting](docs/TESTING.md)
+
+---
+
+## 🛠️ Local Development
 
 ```bash
-# Run with auto-reload
-npm run dev
+# Clone
+git clone https://github.com/zekeforwin-droid/voice-changer-phone.git
+cd voice-changer-phone
 
-# Run tests
-npm test
+# Install
+npm install
 
-# Initiate test call
-npm run call +15551234567 deep_male
+# Configure
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run
+npm start
+
+# Open http://localhost:3000
 ```
 
-## License
+For local testing, use [ngrok](https://ngrok.com) to expose your server:
+```bash
+ngrok http 3000
+# Use the HTTPS URL as SERVER_URL
+```
+
+---
+
+## 📄 License
 
 MIT - Use responsibly.
 
-## Disclaimer
+## ⚠️ Disclaimer
 
-This tool is for legitimate use only. Do not use for fraud, impersonation, or harassment. Comply with all applicable laws regarding voice alteration in phone calls.
+For legitimate use only. Do not use for fraud, impersonation, or harassment. Comply with all applicable laws.
+
+---
+
+Made with 🎭 by Zeke
