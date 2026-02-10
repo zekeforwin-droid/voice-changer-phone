@@ -102,6 +102,30 @@ fastify.post('/voice', async (request, reply) => {
 });
 
 /**
+ * GET /voice - Test route for browser testing
+ */
+fastify.get('/voice', async (request, reply) => {
+  const voicePreset = request.query.voicePreset || 'deep_male';
+  logger.info(`TwiML test request - Voice: ${voicePreset}`);
+  
+  const host = process.env.SERVER_URL?.replace(/^https?:\/\//, '') || request.headers.host;
+  const wsUrl = `wss://${host}/media-stream?voicePreset=${voicePreset}&callId=test123`;
+  
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Matthew">Test TwiML generated successfully. Voice preset: ${voicePreset}</Say>
+  <Connect>
+    <Stream url="${wsUrl}" track="both_tracks">
+      <Parameter name="voicePreset" value="${voicePreset}" />
+      <Parameter name="callId" value="test123" />
+    </Stream>
+  </Connect>
+</Response>`;
+
+  reply.type('text/xml').send(twiml);
+});
+
+/**
  * POST /voice/outbound - TwiML for the outbound leg (recipient side)
  */
 fastify.post('/voice/outbound', async (request, reply) => {
