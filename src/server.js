@@ -252,7 +252,11 @@ const HOST = process.env.HOST || '0.0.0.0';
 try {
   await fastify.listen({ port: PORT, host: HOST });
   logger.info(`🎭 Voice Changer Phone Server running on ${HOST}:${PORT}`);
-  logger.info(`   WebSocket: wss://${process.env.SERVER_URL || 'localhost:' + PORT}/media-stream`);
+  
+  // Fix WebSocket URL - strip https:// from SERVER_URL  
+  const serverUrl = process.env.SERVER_URL || `localhost:${PORT}`;
+  const wsUrl = serverUrl.replace(/^https?:\/\//, '');
+  logger.info(`   WebSocket: wss://${wsUrl}/media-stream`);
   logger.info(`   Web UI: http://localhost:${PORT}`);
   
   // Log configuration status
