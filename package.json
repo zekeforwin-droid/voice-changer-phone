@@ -1,0 +1,39 @@
+{
+  "name": "voice-changer-phone",
+  "version": "1.0.0",
+  "description": "Real-time voice transformation phone system using Twilio and ElevenLabs",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node scripts/test-audio.js",
+    "call": "node scripts/initiate-call.js"
+  },
+  "keywords": [
+    "voice-changer",
+    "twilio",
+    "elevenlabs",
+    "real-time",
+    "phone"
+  ],
+  "author": "Win",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "fastify": "^4.26.2",
+    "fastify-static": "^4.7.0",
+    "@fastify/static": "^7.0.1",
+    "@fastify/websocket": "^10.0.1",
+    "twilio": "^5.0.0",
+    "ws": "^8.16.0",
+    "pino": "^8.19.0",
+    "pino-pretty": "^10.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}
