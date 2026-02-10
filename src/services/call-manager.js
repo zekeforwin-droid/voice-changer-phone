@@ -48,10 +48,6 @@ export class CallManager {
       throw new Error('Twilio client not configured');
     }
     
-    if (!this.phoneNumber) {
-      throw new Error('TWILIO_PHONE_NUMBER not configured');
-    }
-    
     if (!this.serverUrl) {
       throw new Error('SERVER_URL not configured');
     }
@@ -61,19 +57,30 @@ export class CallManager {
     
     logger.info(`Initiating call to ${formattedNumber} with voice: ${voicePreset}`);
     
+    // Check if we have a phone number or if we're using trial
+    const isTrialAccount = !this.phoneNumber;
+    logger.info(`Using ${isTrialAccount ? 'trial account (no from number)' : 'phone number: ' + this.phoneNumber}`);
+    
     try {
-      // Create the call
-      const call = await this.client.calls.create({
+      // Create call configuration
+      const callConfig = {
         url: `${this.serverUrl}/voice?voicePreset=${voicePreset}`,
         to: formattedNumber,
-        from: this.phoneNumber,
         statusCallback: `${this.serverUrl}/call-status`,
         statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
         statusCallbackMethod: 'POST',
         // Use machine detection to handle voicemails
         machineDetection: 'Enable',
         machineDetectionTimeout: 5,
-      });
+      };
+      
+      // Only add 'from' if we have a purchased number
+      if (this.phoneNumber) {
+        callConfig.from = this.phoneNumber;
+      }
+      
+      // Create the call
+      const call = await this.client.calls.create(callConfig);
       
       logger.info(`Call created: ${call.sid}`);
       
