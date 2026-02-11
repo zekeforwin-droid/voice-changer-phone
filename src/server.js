@@ -59,10 +59,12 @@ fastify.register(async function (fastify) {
     const voicePreset = params.get('voicePreset') || 'deep_male';
     const callId = params.get('callId') || 'unknown';
     
-    logger.info(`🔌 Twilio Media Stream WebSocket CONNECTED`);
+    logger.info(`🔌 TWILIO Media Stream WebSocket Connection Attempt`);
     logger.info(`   Call ID: ${callId}`);
     logger.info(`   Voice Preset: ${voicePreset}`);
     logger.info(`   Client IP: ${req.headers['x-forwarded-for'] || req.ip}`);
+    logger.info(`   Full URL: ${req.url}`);
+    logger.info(`   User Agent: ${req.headers['user-agent']}`);
     
     handleMediaStream(socket, {
       callId,

@@ -607,6 +607,8 @@
     function startAudioStream() {
       if (!mediaStream || !audioWebSocket || !isStreamingAudio) return;
       
+      console.log('🎤 Starting audio stream...');
+      
       // Create a MediaRecorder to capture audio
       const mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: 'audio/webm;codecs=opus',
@@ -615,13 +617,25 @@
       
       mediaRecorder.ondataavailable = function(event) {
         if (event.data.size > 0 && audioWebSocket.readyState === WebSocket.OPEN) {
+          console.log(`📤 Sending audio chunk: ${event.data.size} bytes`);
           // Send audio chunk to server for voice transformation
           audioWebSocket.send(event.data);
         }
       };
       
+      mediaRecorder.onstart = function() {
+        console.log('🎤 MediaRecorder started');
+      };
+      
+      mediaRecorder.onerror = function(event) {
+        console.error('❌ MediaRecorder error:', event);
+        showAlert('error', 'Microphone recording failed: ' + event.error);
+      };
+      
       // Stream in small chunks for low latency
       mediaRecorder.start(100); // 100ms chunks
+      
+      console.log('🎤 MediaRecorder.start(100) called');
       
       // Store for cleanup
       window.activeMediaRecorder = mediaRecorder;

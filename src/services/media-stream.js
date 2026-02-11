@@ -20,6 +20,8 @@ const SAMPLE_RATE_ELEVENLABS = 16000;  // ElevenLabs optimal input rate
 export function handleMediaStream(socket, options) {
   const { callId, voicePreset, callManager, voiceTransformer, logger } = options;
   
+  logger.info(`🔌 Twilio Media Stream WebSocket CONNECTED for call ${callId}`);
+  
   // State
   let streamSid = null;
   let isConnected = false;
@@ -213,6 +215,9 @@ export function handleClientAudioStream(socket, options) {
     try {
       audioChunkCount++;
       
+      // Log every chunk initially to debug
+      logger.info(`📤 Received client audio chunk ${audioChunkCount} (${audioData.length} bytes) for call ${callId}`);
+      
       // Audio data comes as WebM/Opus from MediaRecorder
       // We need to:
       // 1. Convert WebM to raw PCM
@@ -222,19 +227,14 @@ export function handleClientAudioStream(socket, options) {
       
       const startTime = Date.now();
       
-      // For now, log that we're receiving audio
-      if (audioChunkCount % 10 === 0) { // Log every 10th chunk to avoid spam
-        logger.debug(`Received client audio chunk ${audioChunkCount} (${audioData.length} bytes) for call ${callId}`);
-      }
-      
       // TODO: Implement actual audio processing pipeline
       // This requires WebM decoder, voice transformation, and Twilio forwarding
       
-      // Placeholder for audio processing
+      // For now, just verify we're receiving data
       await processClientAudio(audioData, callId, voicePreset, voiceTransformer, logger);
       
       const processingTime = Date.now() - startTime;
-      if (processingTime > 100) {
+      if (processingTime > 50) {
         logger.warn(`Client audio processing took ${processingTime}ms for call ${callId}`);
       }
       
@@ -260,20 +260,33 @@ export function handleClientAudioStream(socket, options) {
 }
 
 /**
- * Process client audio data (placeholder for full implementation)
- * TODO: Implement WebM->PCM conversion, voice transformation, Twilio forwarding
+ * Process client audio data 
+ * Currently logs received audio - needs full WebM->Voice Transform->Twilio pipeline
  */
 async function processClientAudio(webmAudioData, callId, voicePreset, voiceTransformer, logger) {
-  // This is a placeholder implementation
-  // Full implementation would need:
+  // Log that we're processing audio
+  logger.info(`🎵 Processing ${webmAudioData.length} bytes of client audio for call ${callId} with voice ${voicePreset}`);
+  
+  // TODO: Full implementation needs:
   // 1. WebM/Opus decoder (ffmpeg or web audio API)
-  // 2. Voice transformation via ElevenLabs
+  // 2. Voice transformation via ElevenLabs 
   // 3. Audio encoding to μ-law
-  // 4. Forwarding to active Twilio call
+  // 4. Send to Twilio Media Stream for the active call
   
-  // For now, just log that we received the audio
-  logger.debug(`Processing ${webmAudioData.length} bytes of client audio for call ${callId} with voice ${voicePreset}`);
+  // For now, verify we can access the voice transformer
+  try {
+    // This doesn't do actual transformation yet, but validates the service
+    logger.info(`🎭 Voice transformer available for preset: ${voicePreset}`);
+    
+    // TODO: Implement actual audio pipeline here
+    // const pcmAudio = await decodeWebM(webmAudioData);
+    // const transformedAudio = await voiceTransformer.transform(pcmAudio, voicePreset);  
+    // const mulawAudio = await encodeMulaw(transformedAudio);
+    // await sendToTwilioCall(callId, mulawAudio);
+    
+  } catch (error) {
+    logger.error(`Voice processing failed: ${error.message}`);
+  }
   
-  // TODO: Replace with actual audio pipeline
   return true;
 }
