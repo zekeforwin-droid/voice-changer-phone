@@ -270,6 +270,30 @@
       border-bottom: none;
     }
     
+    .audio-controls {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    
+    .audio-level {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .audio-level-fill {
+      height: 100%;
+      background: var(--success);
+      transition: width 0.1s;
+      border-radius: 4px;
+    }
+    
     .hidden {
       display: none !important;
     }
@@ -315,7 +339,7 @@
   <div class="container">
     <header>
       <h1>🎭 Voice Changer Phone</h1>
-      <p class="subtitle">Make calls with real-time voice transformation</p>
+      <p class="subtitle">Make calls with real-time voice transformation using your microphone</p>
     </header>
     
     <!-- Status Bar -->
@@ -329,6 +353,10 @@
         <span>ElevenLabs</span>
       </div>
       <div class="status-item">
+        <span class="status-dot" id="micStatus"></span>
+        <span>Microphone</span>
+      </div>
+      <div class="status-item">
         <span class="status-dot" id="serverStatus"></span>
         <span>Server</span>
       </div>
@@ -337,8 +365,31 @@
     <!-- Alert Area -->
     <div id="alertArea"></div>
     
+    <!-- Microphone Setup -->
+    <div class="card" id="micSetup">
+      <h2 class="card-title">🎤 Microphone Setup</h2>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">
+        Grant microphone access to use voice transformation during calls.
+      </p>
+      
+      <button id="enableMicBtn" onclick="setupMicrophone()">
+        <span>🎤</span>
+        <span>Enable Microphone</span>
+      </button>
+      
+      <div class="audio-controls hidden" id="audioControls">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Microphone Level:</span>
+          <span id="micVolume">0%</span>
+        </div>
+        <div class="audio-level">
+          <div class="audio-level-fill" id="micLevelBar"></div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Call Form -->
-    <div class="card" id="callForm">
+    <div class="card hidden" id="callForm">
       <h2 class="card-title">📞 New Call</h2>
       
       <div class="form-group">
@@ -382,6 +433,16 @@
         </div>
       </div>
       
+      <div class="audio-controls">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Your Voice Level:</span>
+          <span id="callMicVolume">0%</span>
+        </div>
+        <div class="audio-level">
+          <div class="audio-level-fill" id="callMicLevelBar"></div>
+        </div>
+      </div>
+      
       <button class="btn-danger" id="endCallBtn" onclick="endCall()" style="margin-top: 16px;">
         <span>📵</span>
         <span>End Call</span>
@@ -409,7 +470,7 @@
     </div>
     
     <footer class="footer">
-      Voice Changer Phone v1.0 • Powered by Twilio & ElevenLabs
+      Voice Changer Phone v2.0 • Powered by Twilio & ElevenLabs • Now with Microphone Capture!
     </footer>
   </div>
   
@@ -420,6 +481,14 @@
     let callTimer = null;
     let callStartTime = null;
     
+    // Audio state
+    let mediaStream = null;
+    let audioContext = null;
+    let analyzer = null;
+    let micDataArray = null;
+    let audioWebSocket = null;
+    let isStreamingAudio = false;
+    
     // Load voices on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadVoices();
@@ -429,6 +498,134 @@
       // Refresh stats periodically
       setInterval(loadStats, 30000);
     });
+    
+    // Setup microphone capture
+    async function setupMicrophone() {
+      const btn = document.getElementById('enableMicBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span><span>Requesting Access...</span>';
+      
+      try {
+        // Get microphone access
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000
+          } 
+        });
+        
+        // Setup audio context for visualization
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyzer = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyzer);
+        
+        analyzer.fftSize = 256;
+        const bufferLength = analyzer.frequencyBinCount;
+        micDataArray = new Uint8Array(bufferLength);
+        
+        // Update status
+        document.getElementById('micStatus').className = 'status-dot green';
+        document.getElementById('audioControls').classList.remove('hidden');
+        document.getElementById('callForm').classList.remove('hidden');
+        document.getElementById('micSetup').classList.add('hidden');
+        
+        // Start microphone level monitoring
+        updateMicLevel();
+        
+        showAlert('success', 'Microphone enabled! You can now make calls.');
+        
+      } catch (error) {
+        document.getElementById('micStatus').className = 'status-dot red';
+        showAlert('error', 'Failed to access microphone: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<span>🎤</span><span>Enable Microphone</span>';
+      }
+    }
+    
+    // Update microphone level visualization
+    function updateMicLevel() {
+      if (!analyzer) return;
+      
+      analyzer.getByteFrequencyData(micDataArray);
+      
+      // Calculate average volume
+      let sum = 0;
+      for (let i = 0; i < micDataArray.length; i++) {
+        sum += micDataArray[i];
+      }
+      const average = sum / micDataArray.length;
+      const percentage = Math.round((average / 255) * 100);
+      
+      // Update UI
+      document.getElementById('micVolume').textContent = percentage + '%';
+      document.getElementById('micLevelBar').style.width = percentage + '%';
+      
+      if (document.getElementById('callMicVolume')) {
+        document.getElementById('callMicVolume').textContent = percentage + '%';
+        document.getElementById('callMicLevelBar').style.width = percentage + '%';
+      }
+      
+      // Continue monitoring
+      requestAnimationFrame(updateMicLevel);
+    }
+    
+    // Setup audio streaming WebSocket
+    function setupAudioStreaming(callId, voicePreset) {
+      if (!mediaStream) {
+        showAlert('error', 'Microphone not enabled');
+        return;
+      }
+      
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/client-audio-stream?callId=${callId}&voice=${voicePreset}`;
+      
+      audioWebSocket = new WebSocket(wsUrl);
+      
+      audioWebSocket.onopen = function() {
+        console.log('Audio WebSocket connected');
+        isStreamingAudio = true;
+        
+        // Start streaming microphone audio
+        startAudioStream();
+      };
+      
+      audioWebSocket.onclose = function() {
+        console.log('Audio WebSocket disconnected');
+        isStreamingAudio = false;
+      };
+      
+      audioWebSocket.onerror = function(error) {
+        console.error('Audio WebSocket error:', error);
+        showAlert('error', 'Failed to connect audio stream');
+      };
+    }
+    
+    // Start streaming microphone audio
+    function startAudioStream() {
+      if (!mediaStream || !audioWebSocket || !isStreamingAudio) return;
+      
+      // Create a MediaRecorder to capture audio
+      const mediaRecorder = new MediaRecorder(mediaStream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 16000
+      });
+      
+      mediaRecorder.ondataavailable = function(event) {
+        if (event.data.size > 0 && audioWebSocket.readyState === WebSocket.OPEN) {
+          // Send audio chunk to server for voice transformation
+          audioWebSocket.send(event.data);
+        }
+      };
+      
+      // Stream in small chunks for low latency
+      mediaRecorder.start(100); // 100ms chunks
+      
+      // Store for cleanup
+      window.activeMediaRecorder = mediaRecorder;
+    }
     
     // Load available voices
     async function loadVoices() {
@@ -521,6 +718,11 @@
         return;
       }
       
+      if (!mediaStream) {
+        showAlert('error', 'Please enable microphone first');
+        return;
+      }
+      
       const btn = document.getElementById('callBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="loading"></span><span>Calling...</span>';
@@ -537,7 +739,8 @@
         if (data.success) {
           activeCallSid = data.callSid;
           showActiveCall(phone, selectedVoice);
-          showAlert('success', `Call initiated to ${phone}`);
+          setupAudioStreaming(data.callSid, selectedVoice);
+          showAlert('success', `Call initiated to ${phone} with voice transformation`);
         } else {
           throw new Error(data.error || 'Failed to initiate call');
         }
@@ -628,8 +831,20 @@
         callTimer = null;
       }
       
+      // Stop audio streaming
+      if (audioWebSocket) {
+        audioWebSocket.close();
+        audioWebSocket = null;
+      }
+      
+      if (window.activeMediaRecorder) {
+        window.activeMediaRecorder.stop();
+        window.activeMediaRecorder = null;
+      }
+      
       activeCallSid = null;
       callStartTime = null;
+      isStreamingAudio = false;
       
       // Refresh stats
       loadStats();
@@ -653,6 +868,16 @@
         alert.remove();
       }, 5000);
     }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+      if (audioWebSocket) {
+        audioWebSocket.close();
+      }
+    });
   </script>
 </body>
 </html>

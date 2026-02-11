@@ -18,7 +18,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocket } from 'ws';
 
-import { handleMediaStream } from './services/media-stream.js';
+import { handleMediaStream, handleClientAudioStream } from './services/media-stream.js';
 import { CallManager } from './services/call-manager.js';
 import { VoiceTransformer } from './services/voice-transformer.js';
 import { createLogger } from './utils/logger.js';
@@ -50,21 +50,41 @@ const callManager = new CallManager();
 const voiceTransformer = new VoiceTransformer();
 
 // ============================================
-// WebSocket Route - Twilio Media Streams
+// WebSocket Routes
 // ============================================
 fastify.register(async function (fastify) {
+  // Twilio Media Streams (receives audio from called person)
   fastify.get('/media-stream', { websocket: true }, (socket, req) => {
     const params = new URL(req.url, `http://${req.headers.host}`).searchParams;
     const voicePreset = params.get('voicePreset') || 'deep_male';
     const callId = params.get('callId') || 'unknown';
     
-    logger.info(`🔌 WebSocket CONNECTION ESTABLISHED!`);
+    logger.info(`🔌 Twilio Media Stream WebSocket CONNECTED`);
     logger.info(`   Call ID: ${callId}`);
     logger.info(`   Voice Preset: ${voicePreset}`);
     logger.info(`   Client IP: ${req.headers['x-forwarded-for'] || req.ip}`);
-    logger.info(`   Request URL: ${req.url}`);
     
     handleMediaStream(socket, {
+      callId,
+      voicePreset,
+      callManager,
+      voiceTransformer,
+      logger,
+    });
+  });
+  
+  // Client Audio Stream (receives microphone audio from browser)
+  fastify.get('/client-audio-stream', { websocket: true }, (socket, req) => {
+    const params = new URL(req.url, `http://${req.headers.host}`).searchParams;
+    const callId = params.get('callId') || 'unknown';
+    const voicePreset = params.get('voice') || 'deep_male';
+    
+    logger.info(`🎤 Client Audio Stream WebSocket CONNECTED`);
+    logger.info(`   Call ID: ${callId}`);
+    logger.info(`   Voice Preset: ${voicePreset}`);
+    logger.info(`   Client IP: ${req.headers['x-forwarded-for'] || req.ip}`);
+    
+    handleClientAudioStream(socket, {
       callId,
       voicePreset,
       callManager,

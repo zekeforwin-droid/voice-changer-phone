@@ -188,3 +188,92 @@ export function createClearMessage(streamSid) {
     streamSid: streamSid,
   });
 }
+
+/**
+ * Handle Client Audio Stream WebSocket connection
+ * Receives microphone audio from browser, transforms it, forwards to Twilio call
+ */
+export function handleClientAudioStream(socket, options) {
+  const { callId, voicePreset, callManager, voiceTransformer, logger } = options;
+  
+  // State
+  let isConnected = false;
+  let audioChunkCount = 0;
+  
+  logger.info(`🎤 Client audio stream started for call ${callId}`);
+  
+  // Track active client stream
+  callManager.addClientStream(callId, {
+    voicePreset,
+    startTime: Date.now(),
+  });
+  
+  // Handle incoming audio chunks from browser
+  socket.on('message', async (audioData) => {
+    try {
+      audioChunkCount++;
+      
+      // Audio data comes as WebM/Opus from MediaRecorder
+      // We need to:
+      // 1. Convert WebM to raw PCM
+      // 2. Transform the voice 
+      // 3. Convert to μ-law for Twilio
+      // 4. Send to active Twilio call
+      
+      const startTime = Date.now();
+      
+      // For now, log that we're receiving audio
+      if (audioChunkCount % 10 === 0) { // Log every 10th chunk to avoid spam
+        logger.debug(`Received client audio chunk ${audioChunkCount} (${audioData.length} bytes) for call ${callId}`);
+      }
+      
+      // TODO: Implement actual audio processing pipeline
+      // This requires WebM decoder, voice transformation, and Twilio forwarding
+      
+      // Placeholder for audio processing
+      await processClientAudio(audioData, callId, voicePreset, voiceTransformer, logger);
+      
+      const processingTime = Date.now() - startTime;
+      if (processingTime > 100) {
+        logger.warn(`Client audio processing took ${processingTime}ms for call ${callId}`);
+      }
+      
+    } catch (error) {
+      logger.error(`Client audio processing error for call ${callId}: ${error.message}`);
+    }
+  });
+  
+  socket.on('open', () => {
+    logger.info(`Client audio stream connected for call ${callId}`);
+    isConnected = true;
+  });
+  
+  socket.on('close', () => {
+    logger.info(`Client audio stream closed for call ${callId}`);
+    isConnected = false;
+    callManager.removeClientStream?.(callId);
+  });
+  
+  socket.on('error', (error) => {
+    logger.error(`Client audio stream error for call ${callId}: ${error.message}`);
+  });
+}
+
+/**
+ * Process client audio data (placeholder for full implementation)
+ * TODO: Implement WebM->PCM conversion, voice transformation, Twilio forwarding
+ */
+async function processClientAudio(webmAudioData, callId, voicePreset, voiceTransformer, logger) {
+  // This is a placeholder implementation
+  // Full implementation would need:
+  // 1. WebM/Opus decoder (ffmpeg or web audio API)
+  // 2. Voice transformation via ElevenLabs
+  // 3. Audio encoding to μ-law
+  // 4. Forwarding to active Twilio call
+  
+  // For now, just log that we received the audio
+  logger.debug(`Processing ${webmAudioData.length} bytes of client audio for call ${callId} with voice ${voicePreset}`);
+  
+  // TODO: Replace with actual audio pipeline
+  return true;
+}

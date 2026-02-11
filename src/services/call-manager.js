@@ -27,7 +27,8 @@ export class CallManager {
     this.serverUrl = process.env.SERVER_URL;
     
     // Track active streams and call history
-    this.activeStreams = new Map();
+    this.activeStreams = new Map(); // Twilio media streams (from called person)
+    this.clientStreams = new Map(); // Client audio streams (from caller's mic)
     this.callHistory = [];
     this.stats = {
       totalCalls: 0,
@@ -209,6 +210,27 @@ export class CallManager {
   }
   
   /**
+   * Add a client audio stream (called by client-audio-stream handler)
+   */
+  addClientStream(callId, info) {
+    this.clientStreams.set(callId, {
+      ...info,
+      connectedAt: Date.now(),
+    });
+  }
+  
+  /**
+   * Remove a client audio stream
+   */
+  removeClientStream(callId) {
+    const stream = this.clientStreams.get(callId);
+    if (stream) {
+      logger.info(`Client stream for call ${callId} disconnected after ${Date.now() - stream.connectedAt}ms`);
+    }
+    this.clientStreams.delete(callId);
+  }
+  
+  /**
    * Record call end with metrics
    */
   recordCallEnd(callSid, metrics) {
@@ -231,6 +253,7 @@ export class CallManager {
     return {
       ...this.stats,
       activeStreams: this.activeStreams.size,
+      activeClientStreams: this.clientStreams.size,
       recentCalls: this.callHistory.slice(-10),
       estimatedCost: this.estimateCost(),
     };
