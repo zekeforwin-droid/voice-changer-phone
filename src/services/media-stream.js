@@ -18,7 +18,7 @@ const SAMPLE_RATE_ELEVENLABS = 16000;  // ElevenLabs optimal input rate
  * Handle a Twilio Media Stream WebSocket connection
  */
 export function handleMediaStream(socket, options) {
-  const { callId, voicePreset, callManager, voiceTransformer, logger } = options;
+  const { callId, voicePreset, callManager, voiceTransformer, audioBridge, logger } = options;
   
   logger.info(`🔌 Twilio Media Stream WebSocket CONNECTED for call ${callId}`);
   
@@ -108,11 +108,14 @@ export function handleMediaStream(socket, options) {
           streamSid = message.start.streamSid;
           const customParams = message.start.customParameters || {};
           
-          logger.info(`Stream started: ${streamSid}`);
+          logger.info(`📞 Twilio Stream started: ${streamSid} for call ${callId}`);
           logger.debug(`Stream params: ${JSON.stringify(customParams)}`);
           
           // Initialize voice transformer for this stream
           await voiceTransformer.initializeStream(callId, voicePreset);
+          
+          // Connect Twilio stream to audio bridge
+          audioBridge.connectTwilioStream(callId, socket, streamSid);
           break;
           
         case 'media':
@@ -140,6 +143,9 @@ export function handleMediaStream(socket, options) {
           
           // Cleanup
           await voiceTransformer.closeStream(callId);
+          
+          // Remove audio bridge
+          audioBridge.removeBridge(callId);
           
           // Log metrics
           const metrics = latencyTracker.getMetrics();
@@ -196,13 +202,21 @@ export function createClearMessage(streamSid) {
  * Receives microphone audio from browser, transforms it, forwards to Twilio call
  */
 export function handleClientAudioStream(socket, options) {
-  const { callId, voicePreset, callManager, voiceTransformer, logger } = options;
+  const { callId, voicePreset, callManager, voiceTransformer, audioBridge, logger } = options;
   
   // State
   let isConnected = false;
   let audioChunkCount = 0;
   
   logger.info(`🎤 Client audio stream started for call ${callId}`);
+  
+  // Create or get audio bridge for this call
+  if (!audioBridge.getBridgeStatus(callId)) {
+    audioBridge.createBridge(callId, voicePreset);
+  }
+  
+  // Connect client stream to audio bridge
+  audioBridge.connectClientStream(callId, socket);
   
   // Track active client stream
   callManager.addClientStream(callId, {
@@ -227,10 +241,10 @@ export function handleClientAudioStream(socket, options) {
       
       const startTime = Date.now();
       
-      // TODO: Implement actual audio processing pipeline
-      // This requires WebM decoder, voice transformation, and Twilio forwarding
+      // Forward audio to bridge for processing and forwarding to Twilio
+      await audioBridge.processClientAudio(callId, audioData);
       
-      // For now, just verify we're receiving data
+      // Also log for debugging (can be removed later)
       await processClientAudio(audioData, callId, voicePreset, voiceTransformer, logger);
       
       const processingTime = Date.now() - startTime;
@@ -251,6 +265,10 @@ export function handleClientAudioStream(socket, options) {
   socket.on('close', () => {
     logger.info(`Client audio stream closed for call ${callId}`);
     isConnected = false;
+    
+    // Remove bridge if both streams are closed
+    audioBridge.removeBridge(callId);
+    
     callManager.removeClientStream?.(callId);
   });
   

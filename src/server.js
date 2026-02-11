@@ -21,6 +21,7 @@ import { WebSocket } from 'ws';
 import { handleMediaStream, handleClientAudioStream } from './services/media-stream.js';
 import { CallManager } from './services/call-manager.js';
 import { VoiceTransformer } from './services/voice-transformer.js';
+import { AudioBridge } from './services/audio-bridge.js';
 import { createLogger } from './utils/logger.js';
 import { VOICE_PRESETS } from './utils/voice-presets.js';
 
@@ -48,6 +49,7 @@ await fastify.register(import('@fastify/formbody'));
 // Initialize services
 const callManager = new CallManager();
 const voiceTransformer = new VoiceTransformer();
+const audioBridge = new AudioBridge(voiceTransformer);
 
 // ============================================
 // WebSocket Routes
@@ -71,6 +73,7 @@ fastify.register(async function (fastify) {
       voicePreset,
       callManager,
       voiceTransformer,
+      audioBridge,
       logger,
     });
   });
@@ -91,6 +94,7 @@ fastify.register(async function (fastify) {
       voicePreset,
       callManager,
       voiceTransformer,
+      audioBridge,
       logger,
     });
   });
@@ -298,9 +302,21 @@ fastify.get('/api/health', async (request, reply) => {
       twilio: !!process.env.TWILIO_ACCOUNT_SID,
       elevenlabs: !!process.env.ELEVENLABS_API_KEY,
     },
+    audioBridges: audioBridge.getActiveBridges(),
   };
   
   reply.send(health);
+});
+
+/**
+ * GET /api/debug/bridges - Audio bridge debugging
+ */
+fastify.get('/api/debug/bridges', async (request, reply) => {
+  reply.send({
+    success: true,
+    bridges: audioBridge.getActiveBridges(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 /**
